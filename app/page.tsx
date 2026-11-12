@@ -20,8 +20,12 @@ export default function Home() {
     setRows(data ?? []);
   }
 
-  useEffect(() => {
-    load();
+    useEffect(() => {
+    supabase
+      .from("guestbook")
+      .select("id, message")
+      .order("id", { ascending: false })
+      .then(({ data }) => setRows(data ?? []));
   }, []);
 
   // 방명록 글쓰기
