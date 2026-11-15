@@ -43,7 +43,7 @@ export default function Home() {
   return (
     <main style={{ padding: 40 }}>
       <h1 style={{ fontSize: 32, fontWeight: "bold" }}>
-        안녕하세요! 김규석의 첫 웹사이트
+        이쁜이와 밤송이를 사랑해 주세요!
       </h1>
       <h2 style={{ marginTop: 24, fontSize: 24 }}>📖 방명록</h2>
 
