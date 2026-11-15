@@ -12,14 +12,52 @@ function onlyDigits(value: string) {
   return value.replace(/[^0-9]/g, "").slice(0, 15);
 }
 
+const inputStyle = { border: "1px solid #999", padding: 8, width: 240 };
+
+// 금액 입력칸 하나 (라벨 + 콤마 표시 입력창). 값은 "숫자만 있는 문자열"로 주고받는다
+function MoneyInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (digits: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <label style={{ display: "block", marginTop: 12 }}>
+      {label} (원)
+      <input
+        inputMode="numeric"
+        value={value === "" ? "" : withComma(Number(value))}
+        onChange={(e) => onChange(onlyDigits(e.target.value))}
+        placeholder={placeholder}
+        style={{ ...inputStyle, display: "block", marginTop: 4 }}
+      />
+    </label>
+  );
+}
+
 export default function Calculator() {
   // 입력칸 값은 "숫자만 있는 문자열"로 보관한다 (빈 칸 = "")
   const [income, setIncome] = useState("");
-  const [cost, setCost] = useState("");
+  const [construction, setConstruction] = useState("");
+  const [finance, setFinance] = useState("");
+  const [etc, setEtc] = useState("");
+
+  // 지출 입력칸 목록 (같은 모양의 칸을 map으로 반복해서 그린다)
+  const expenseFields = [
+    { label: "공사비", value: construction, set: setConstruction, placeholder: "예: 6,000,000" },
+    { label: "금융비용", value: finance, set: setFinance, placeholder: "예: 500,000" },
+    { label: "기타비용", value: etc, set: setEtc, placeholder: "예: 500,000" },
+  ];
 
   const incomeNum = Number(income || 0);
-  const costNum = Number(cost || 0);
-  const profit = incomeNum - costNum;
+  // 지출 = 세 칸의 합계 (빈 칸은 0으로 계산)
+  const expense = expenseFields.reduce((sum, f) => sum + Number(f.value || 0), 0);
+  const profit = incomeNum - expense;
 
   // 총수입이 비었거나 0이면 0으로 나누게 되므로 계산하지 않는다
   const canCalcRate = income !== "" && incomeNum !== 0;
@@ -27,8 +65,6 @@ export default function Calculator() {
 
   // 이익은 초록, 손실은 빨강
   const color = profit < 0 ? "#dc2626" : "#16a34a";
-
-  const inputStyle = { border: "1px solid #999", padding: 8, width: 240 };
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -43,19 +79,21 @@ export default function Calculator() {
         />
       </label>
 
-      <label style={{ display: "block", marginTop: 12 }}>
-        시공금액 (원)
-        <input
-          inputMode="numeric"
-          value={cost === "" ? "" : withComma(Number(cost))}
-          onChange={(e) => setCost(onlyDigits(e.target.value))}
-          placeholder="예: 7,000,000"
-          style={{ ...inputStyle, display: "block", marginTop: 4 }}
+      {expenseFields.map((f) => (
+        <MoneyInput
+          key={f.label}
+          label={f.label}
+          value={f.value}
+          onChange={f.set}
+          placeholder={f.placeholder}
         />
-      </label>
+      ))}
 
       <div style={{ marginTop: 24, fontSize: 20 }}>
         <p>
+          지출 합계: <strong>{withComma(expense)}원</strong>
+        </p>
+        <p style={{ marginTop: 8 }}>
           {profit < 0 ? "손실" : "이익"}:{" "}
           <strong style={{ color }}>
             {profit < 0 ? "-" : ""}
