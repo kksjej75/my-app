@@ -7,15 +7,30 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 );
 
+// 방명록 한 줄의 모양 (created_at은 Supabase의 timestamptz → 문자열로 옴)
+type Row = { id: number; message: string; created_at: string };
+
+// "2026-11-09T15:38:02+00:00" 같은 값을 한국 시간으로 읽기 쉽게 바꾼다
+function formatTime(value: string) {
+  return new Date(value).toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function Home() {
-  const [rows, setRows] = useState<{ id: number; message: string }[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [text, setText] = useState("");
 
   // 방명록 불러오기 (최신 글이 위로)
   async function load() {
     const { data } = await supabase
       .from("guestbook")
-      .select("id, message")
+      .select("id, message, created_at")
       .order("id", { ascending: false });
     setRows(data ?? []);
   }
@@ -23,7 +38,7 @@ export default function Home() {
     useEffect(() => {
     supabase
       .from("guestbook")
-      .select("id, message")
+      .select("id, message, created_at")
       .order("id", { ascending: false })
       .then(({ data }) => setRows(data ?? []));
   }, []);
@@ -64,7 +79,13 @@ export default function Home() {
 
       <ul style={{ marginTop: 16 }}>
         {rows.map((r) => (
-          <li key={r.id}>{r.message}</li>
+          <li key={r.id}>
+            {r.message}
+            {/* 작성 시간: 글보다 작고 회색으로 */}
+            <span style={{ marginLeft: 8, fontSize: 12, color: "#888" }}>
+              {formatTime(r.created_at)}
+            </span>
+          </li>
         ))}
       </ul>
     </main>
