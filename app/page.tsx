@@ -34,7 +34,8 @@ export default function Home() {
       const { data, error } = await supabase
         .from("guestbook")
         .select("id, message, created_at")
-        .order("id", { ascending: false });
+        .order("id", { ascending: false })
+        .limit(20); // 최신 글 20개까지만
       // Supabase가 에러를 돌려준 경우
       if (error) {
         setLoadFailed(true);
@@ -53,6 +54,7 @@ export default function Home() {
       .from("guestbook")
       .select("id, message, created_at")
       .order("id", { ascending: false })
+      .limit(20) // 최신 글 20개까지만
       .then(
         ({ data, error }) => {
           // Supabase가 에러를 돌려준 경우
