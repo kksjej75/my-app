@@ -25,14 +25,27 @@ function formatTime(value: string) {
 export default function Home() {
   const [rows, setRows] = useState<Row[]>([]);
   const [text, setText] = useState("");
+  // 목록 불러오기 실패 여부 (실패와 "글이 0개"를 구분하려고 따로 둔다)
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // 방명록 불러오기 (최신 글이 위로)
   async function load() {
-    const { data } = await supabase
-      .from("guestbook")
-      .select("id, message, created_at")
-      .order("id", { ascending: false });
-    setRows(data ?? []);
+    try {
+      const { data, error } = await supabase
+        .from("guestbook")
+        .select("id, message, created_at")
+        .order("id", { ascending: false });
+      // Supabase가 에러를 돌려준 경우
+      if (error) {
+        setLoadFailed(true);
+        return;
+      }
+      setLoadFailed(false);
+      setRows(data ?? []);
+    } catch {
+      // 네트워크 끊김 등으로 예외가 난 경우
+      setLoadFailed(true);
+    }
   }
 
     useEffect(() => {
@@ -40,7 +53,18 @@ export default function Home() {
       .from("guestbook")
       .select("id, message, created_at")
       .order("id", { ascending: false })
-      .then(({ data }) => setRows(data ?? []));
+      .then(
+        ({ data, error }) => {
+          // Supabase가 에러를 돌려준 경우
+          if (error) {
+            setLoadFailed(true);
+            return;
+          }
+          setRows(data ?? []);
+        },
+        // 네트워크 끊김 등으로 예외가 난 경우
+        () => setLoadFailed(true)
+      );
   }, []);
 
   // 방명록 글쓰기
@@ -77,17 +101,22 @@ export default function Home() {
         </button>
       </div>
 
-      <ul style={{ marginTop: 16 }}>
-        {rows.map((r) => (
-          <li key={r.id}>
-            {r.message}
-            {/* 작성 시간: 글보다 작고 회색으로 */}
-            <span style={{ marginLeft: 8, fontSize: 12, color: "#888" }}>
-              {formatTime(r.created_at)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {/* 불러오기에 실패하면 목록 대신 안내 문구를 보여준다 */}
+      {loadFailed ? (
+        <p style={{ marginTop: 16, color: "#dc2626" }}>글을 불러오지 못했어요</p>
+      ) : (
+        <ul style={{ marginTop: 16 }}>
+          {rows.map((r) => (
+            <li key={r.id}>
+              {r.message}
+              {/* 작성 시간: 글보다 작고 회색으로 */}
+              <span style={{ marginLeft: 8, fontSize: 12, color: "#888" }}>
+                {formatTime(r.created_at)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
